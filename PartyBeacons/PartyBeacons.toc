@@ -1,0 +1,14 @@
+## Interface: 16001
+## Title: Party Beacons
+## Notes: Class markers above party members' nameplates, with screen-edge indicators when they are out of view.
+## Author: Ooga Vibers
+## Version: 1.0.0
+## Category: Map
+## IconTexture: Interface\AddOns\PartyBeacons\media\icon
+## X-License: GPL-3.0
+## X-Curse-Project-ID: 1805529
+## X-Credits: Position helpers adapted from PartyArrow by TC Conway.
+## SavedVariables: PartyBeaconsDB
+## SavedVariablesPerCharacter: PartyBeaconsCharDB
+
+PartyBeacons.lua
