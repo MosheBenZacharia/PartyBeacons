@@ -19,6 +19,7 @@ local DEFAULTS = {
     style = "icon",  -- "icon": class icon in a class-colored ring; "color": plain class-colored disc
     edge = true,     -- show screen-edge indicators for members without a nameplate
     margin = 80,     -- how far edge indicators sit from every screen edge, in UI pixels
+    maxDistance = 500, -- members farther away than this (yards) get no edge indicator; 0 = no limit
 }
 
 -- Members closer than this without a nameplate get no edge indicator (the bearing is
@@ -400,6 +401,7 @@ local function Update()
                         end
                     end
                 end
+                if theta and db.maxDistance > 0 and dist > db.maxDistance then theta = nil end
                 if theta then
                     mem.theta = (theta + pi) % (2 * pi) - pi
                     mem.edgeDist = dist
@@ -562,7 +564,7 @@ local function MakeCheck(panel, text, anchor, onClick)
 end
 
 -- A labelled slider: "Label  value" above a track. get/set read and write the setting.
-local function MakeSlider(panel, text, anchor, minValue, maxValue, get, set)
+local function MakeSlider(panel, text, anchor, minValue, maxValue, get, set, step, format)
     local holder = CreateFrame("Frame", nil, panel)
     holder:SetSize(260, 44)
     holder:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -8)
@@ -586,11 +588,11 @@ local function MakeSlider(panel, text, anchor, minValue, maxValue, get, set)
     local thumb = slider:GetThumbTexture()
     if thumb then thumb:SetSize(28, 28) end
     slider:SetMinMaxValues(minValue, maxValue)
-    slider:SetValueStep(1)
+    slider:SetValueStep(step or 1)
     if slider.SetObeyStepOnDrag then slider:SetObeyStepOnDrag(true) end
     slider:SetScript("OnValueChanged", function(_, value)
         value = floor(value + 0.5)
-        holder.value:SetText(value)
+        holder.value:SetText(format and format(value) or value)
         if not holder.refreshing and value ~= get() then set(value) end
     end)
     holder.slider = slider
@@ -598,7 +600,7 @@ local function MakeSlider(panel, text, anchor, minValue, maxValue, get, set)
     function holder.Refresh()
         holder.refreshing = true
         slider:SetValue(get())
-        holder.value:SetText(get())
+        holder.value:SetText(format and format(get()) or get())
         holder.refreshing = false
     end
     return holder
@@ -670,10 +672,14 @@ CreateOptionsPanel = function()
     local margin = MakeSlider(panel, "Distance from the screen edge", edge, 20, 400,
         function() return db.margin end,
         function(value) db.margin = value end)
+    local maxDistance = MakeSlider(panel, "Hide indicators farther than (yards)", margin, 0, 1000,
+        function() return db.maxDistance end,
+        function(value) db.maxDistance = value end,
+        50, function(value) return value == 0 and "no limit" or value end)
 
     local test = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     test:SetSize(150, 24)
-    test:SetPoint("TOPLEFT", margin, "BOTTOMLEFT", 0, -18)
+    test:SetPoint("TOPLEFT", maxDistance, "BOTTOMLEFT", 0, -18)
     test:SetScript("OnClick", function() SlashCmdList["PARTYBEACONS"]("test") end)
     local debug = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     debug:SetSize(110, 24)
@@ -688,6 +694,7 @@ CreateOptionsPanel = function()
         size.Refresh()
         offset.Refresh()
         margin.Refresh()
+        maxDistance.Refresh()
         test:SetText(testMode and "Stop test preview" or "Start test preview")
         RefreshPreview()
     end
@@ -721,8 +728,8 @@ end
 local function PrintStatus()
     local name = UnitName("player")
     print(TITLE, "is", OnOff(charDB.enabled), "for", (name and not IsSecret(name)) and name or "this character")
-    print(TITLE, string.format("size %d, offset %d, style %s, edge indicators %s, margin %d",
-        db.size, db.offset, db.style, db.edge and "on" or "off", db.margin))
+    print(TITLE, string.format("size %d, offset %d, style %s, edge indicators %s, margin %d, max distance %d",
+        db.size, db.offset, db.style, db.edge and "on" or "off", db.margin, db.maxDistance))
 end
 
 local function PrintHelp()
@@ -735,6 +742,7 @@ local function PrintHelp()
     print("  /pb style icon | color - class icon in a ring, or a plain class-colored disc")
     print("  /pb edge on | off - screen-edge indicators for members out of view")
     print("  /pb margin <20-400> - how far edge indicators sit from the screen edge")
+    print("  /pb maxdist <0-1000> - hide edge indicators beyond this many yards (0 = no limit)")
     print("  /pb test - preview: marks your target and adds three sample edge indicators")
     print("  /pb debug - print what the game is reporting")
 end
@@ -760,8 +768,8 @@ local function BuildDebugLines()
     local version, build, _, interface = GetBuildInfo()
     add("Party Beacons debug | client", version, build, "interface", interface)
     add("enabled", tostring(charDB.enabled), "| test preview", tostring(testMode),
-        string.format("| size %d offset %d style %s edge %s margin %d",
-            db.size, db.offset, db.style, db.edge and "on" or "off", db.margin))
+        string.format("| size %d offset %d style %s edge %s margin %d maxdist %d",
+            db.size, db.offset, db.style, db.edge and "on" or "off", db.margin, db.maxDistance))
     local cvars = {}
     for _, name in ipairs({ "nameplateShowFriends", "nameplateShowFriendlyPlayers", "nameplateShowAll", "cameraFov" }) do
         local value = C_CVar and C_CVar.GetCVar and C_CVar.GetCVar(name)
@@ -964,6 +972,14 @@ SlashCmdList["PARTYBEACONS"] = function(msg)
             print(TITLE, "margin", db.margin)
         else
             print(TITLE, "margin must be a number from 20 to 400")
+        end
+    elseif command == "maxdist" then
+        local limit = tonumber(argument)
+        if limit and limit >= 0 and limit <= 1000 then
+            db.maxDistance = floor(limit)
+            print(TITLE, "max distance", db.maxDistance == 0 and "no limit" or (db.maxDistance .. " yd"))
+        else
+            print(TITLE, "maxdist must be a number from 0 to 1000 (0 = no limit)")
         end
     elseif command == "test" then
         testMode = not testMode

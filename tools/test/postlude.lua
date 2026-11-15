@@ -5,7 +5,7 @@ local function show(label)
   for i = 1, #members do
     local mem = members[i]; local m = mem.marker; local pt = m.point
     local where = "no point"
-    if pt then
+    if type(pt) == "table" then
       if type(pt[4]) == "number" and pt[1] == "CENTER" then where = string.format("CENTER x=%.1f y=%.1f", pt[4], pt[5])
       else where = string.format("%s -> %s.%s off=%s", pt[1], tostring(pt[2].name), pt[3], tostring(pt[5])) end
     end
@@ -23,6 +23,10 @@ partyCount = 2
 world.party1 = { n = 100, w = 0, inst = 1 }; classes.party1 = "WARRIOR"
 world.party2 = { n = 0, w = -50, inst = 1 }; classes.party2 = "MAGE"
 fire("GROUP_ROSTER_UPDATE"); tick(); show("A facing north; p1 100 north, p2 50 east")
+-- L: max distance hides far edge indicators
+SlashCmdList["PARTYBEACONS"]("maxdist 60"); tick(); show("L maxdist 60: p1 (100 yd) hidden, p2 (50 yd) shown")
+SlashCmdList["PARTYBEACONS"]("maxdist 0"); tick(); show("L maxdist 0: both shown")
+SlashCmdList["PARTYBEACONS"]("maxdist 500"); tick()
 facingValue = math.pi / 2; tick(); show("B facing west")
 facingValue = 0
 world.party1 = { n = -60, w = 1, inst = 1 }; world.party2 = { n = -60, w = -1, inst = 1 }

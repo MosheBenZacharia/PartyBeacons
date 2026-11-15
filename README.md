@@ -9,7 +9,7 @@ Built for **WoW Forever**. It sits on top of the default nameplates and does not
 * **Nameplate marker**: a class icon in a class-colored ring, just above each party member's nameplate. It keeps full contrast and a constant size while the nameplate fades.
 * **Screen-edge indicator**: when a member has no nameplate on screen, the marker slides to the screen edge in their direction. Top means ahead of you, the sides mean left or right, and the bottom means behind you.
 * **Per-character on/off**: turn it on for the character you play with friends and off for the one you pug on.
-* **Options panel**: marker size, height above the nameplate, class icon or plain class color, edge indicators on or off, and distance from the screen edge.
+* **Options panel**: marker size, height above the nameplate, class icon or plain class color, edge indicators on or off, distance from the screen edge, and a maximum distance for edge indicators.
 * Dead members are greyed out. Offline members are hidden.
 
 ## Setup
@@ -20,6 +20,7 @@ Turn on friendly player nameplates in the game's options. The nameplate marker n
 
 * `/pb` (or `/partybeacons`): open the options panel
 * `/pb on` / `/pb off`: turn the markers on or off for this character
+* `/pb maxdist <0-1000>`: hide edge indicators beyond this many yards (default 500, 0 = no limit)
 * `/pb test`: preview the markers without a party
 * `/pb help`: list every command
 * `/pb debug`: open a window with copyable information for bug reports

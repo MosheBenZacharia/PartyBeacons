@@ -1,3 +1,7 @@
+# Unreleased
+
+* New setting: maximum distance for edge indicators (default 500 yards, 0 = no limit). Options panel slider and `/pb maxdist`.
+
 # 1.0.0
 
 Initial release for WoW Forever.
