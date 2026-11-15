@@ -1,4 +1,4 @@
-# Unreleased
+# 1.1.0
 
 * New setting: maximum distance for edge indicators (default 500 yards, 0 = no limit). Options panel slider and `/pb maxdist`.
 
