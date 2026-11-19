@@ -2,7 +2,7 @@
 ## Title: Party Beacons
 ## Notes: Class markers above party members' nameplates, with screen-edge indicators when they are out of view.
 ## Author: Ooga Vibers
-## Version: 1.1.0
+## Version: 1.2.0
 ## Category: Map
 ## IconTexture: Interface\AddOns\PartyBeacons\media\icon
 ## X-License: GPL-3.0

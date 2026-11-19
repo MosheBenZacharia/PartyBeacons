@@ -57,6 +57,8 @@ local function UnitIsConnected(u) return true end
 local function UnitIsDeadOrGhost(u) return dead[u] or false end
 local function UnitName(u) return u end
 local function GetNumSubgroupMembers() return partyCount end
+local instanceType = "none"
+local function IsInInstance() return instanceType ~= "none", instanceType end
 local SlashCmdList = {}
 local openedCategory
 local Settings = {

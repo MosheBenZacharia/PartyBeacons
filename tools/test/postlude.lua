@@ -27,6 +27,14 @@ fire("GROUP_ROSTER_UPDATE"); tick(); show("A facing north; p1 100 north, p2 50 e
 SlashCmdList["PARTYBEACONS"]("maxdist 60"); tick(); show("L maxdist 60: p1 (100 yd) hidden, p2 (50 yd) shown")
 SlashCmdList["PARTYBEACONS"]("maxdist 0"); tick(); show("L maxdist 0: both shown")
 SlashCmdList["PARTYBEACONS"]("maxdist 500"); tick()
+-- M: battlegrounds are off by default
+instanceType = "pvp"; fire("PLAYER_ENTERING_WORLD"); tick()
+print("M in bg, default: members", #members, "db.battlegrounds", tostring(db.battlegrounds))
+SlashCmdList["PARTYBEACONS"]("bg on"); tick()
+print("M in bg, bg on: members", #members)
+SlashCmdList["PARTYBEACONS"]("bg off"); print("M in bg, bg off again: members", #members)
+instanceType = "none"; fire("ZONE_CHANGED_NEW_AREA"); tick()
+print("M back in open world: members", #members)
 facingValue = math.pi / 2; tick(); show("B facing west")
 facingValue = 0
 world.party1 = { n = -60, w = 1, inst = 1 }; world.party2 = { n = -60, w = -1, inst = 1 }

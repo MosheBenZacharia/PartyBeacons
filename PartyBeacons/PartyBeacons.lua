@@ -20,6 +20,7 @@ local DEFAULTS = {
     edge = true,     -- show screen-edge indicators for members without a nameplate
     margin = 80,     -- how far edge indicators sit from every screen edge, in UI pixels
     maxDistance = 500, -- members farther away than this (yards) get no edge indicator; 0 = no limit
+    battlegrounds = false, -- show the markers inside battlegrounds
 }
 
 -- Members closer than this without a nameplate get no edge indicator (the bearing is
@@ -461,6 +462,11 @@ local function AddMember(entry)
     members[#members + 1] = entry
 end
 
+local function InBattleground()
+    local ok, _, instanceType = pcall(IsInInstance)
+    return ok and instanceType == "pvp"
+end
+
 local function Rebuild()
     for i = 1, #members do
         ReleaseMarker(members[i].marker)
@@ -470,8 +476,10 @@ local function Rebuild()
     if not db or not charDB then return end
 
     if charDB.enabled then
-        for i = 1, GetNumSubgroupMembers() do
-            AddMember({ unit = "party" .. i, real = true })
+        if db.battlegrounds or not InBattleground() then
+            for i = 1, GetNumSubgroupMembers() do
+                AddMember({ unit = "party" .. i, real = true })
+            end
         end
         if testMode then
             -- Your target stands in for a party member's nameplate; three fixed compass
@@ -502,6 +510,7 @@ end
 driver:RegisterEvent("ADDON_LOADED")
 driver:RegisterEvent("PLAYER_ENTERING_WORLD")
 driver:RegisterEvent("GROUP_ROSTER_UPDATE")
+driver:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 driver:RegisterEvent("NAME_PLATE_UNIT_ADDED")
 driver:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
 driver:RegisterEvent("PLAYER_TARGET_CHANGED")
@@ -676,10 +685,14 @@ CreateOptionsPanel = function()
         function() return db.maxDistance end,
         function(value) db.maxDistance = value end,
         50, function(value) return value == 0 and "no limit" or value end)
+    local battlegrounds = MakeCheck(panel, "Show markers in battlegrounds", maxDistance, function(on)
+        db.battlegrounds = on
+        Rebuild()
+    end)
 
     local test = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     test:SetSize(150, 24)
-    test:SetPoint("TOPLEFT", maxDistance, "BOTTOMLEFT", 0, -18)
+    test:SetPoint("TOPLEFT", battlegrounds, "BOTTOMLEFT", 0, -18)
     test:SetScript("OnClick", function() SlashCmdList["PARTYBEACONS"]("test") end)
     local debug = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     debug:SetSize(110, 24)
@@ -695,6 +708,7 @@ CreateOptionsPanel = function()
         offset.Refresh()
         margin.Refresh()
         maxDistance.Refresh()
+        battlegrounds:SetChecked(db.battlegrounds and true or false)
         test:SetText(testMode and "Stop test preview" or "Start test preview")
         RefreshPreview()
     end
@@ -728,8 +742,9 @@ end
 local function PrintStatus()
     local name = UnitName("player")
     print(TITLE, "is", OnOff(charDB.enabled), "for", (name and not IsSecret(name)) and name or "this character")
-    print(TITLE, string.format("size %d, offset %d, style %s, edge indicators %s, margin %d, max distance %d",
-        db.size, db.offset, db.style, db.edge and "on" or "off", db.margin, db.maxDistance))
+    print(TITLE, string.format("size %d, offset %d, style %s, edge indicators %s, margin %d, max distance %d, battlegrounds %s",
+        db.size, db.offset, db.style, db.edge and "on" or "off", db.margin, db.maxDistance,
+        db.battlegrounds and "on" or "off"))
 end
 
 local function PrintHelp()
@@ -743,6 +758,7 @@ local function PrintHelp()
     print("  /pb edge on | off - screen-edge indicators for members out of view")
     print("  /pb margin <20-400> - how far edge indicators sit from the screen edge")
     print("  /pb maxdist <0-1000> - hide edge indicators beyond this many yards (0 = no limit)")
+    print("  /pb bg on | off - show the markers in battlegrounds (default off)")
     print("  /pb test - preview: marks your target and adds three sample edge indicators")
     print("  /pb debug - print what the game is reporting")
 end
@@ -768,8 +784,9 @@ local function BuildDebugLines()
     local version, build, _, interface = GetBuildInfo()
     add("Party Beacons debug | client", version, build, "interface", interface)
     add("enabled", tostring(charDB.enabled), "| test preview", tostring(testMode),
-        string.format("| size %d offset %d style %s edge %s margin %d maxdist %d",
-            db.size, db.offset, db.style, db.edge and "on" or "off", db.margin, db.maxDistance))
+        string.format("| size %d offset %d style %s edge %s margin %d maxdist %d bg %s",
+            db.size, db.offset, db.style, db.edge and "on" or "off", db.margin, db.maxDistance,
+            db.battlegrounds and "on" or "off"), "| in battleground", tostring(InBattleground()))
     local cvars = {}
     for _, name in ipairs({ "nameplateShowFriends", "nameplateShowFriendlyPlayers", "nameplateShowAll", "cameraFov" }) do
         local value = C_CVar and C_CVar.GetCVar and C_CVar.GetCVar(name)
@@ -972,6 +989,14 @@ SlashCmdList["PARTYBEACONS"] = function(msg)
             print(TITLE, "margin", db.margin)
         else
             print(TITLE, "margin must be a number from 20 to 400")
+        end
+    elseif command == "bg" then
+        if argument == "on" or argument == "off" then
+            db.battlegrounds = argument == "on"
+            Rebuild()
+            print(TITLE, "markers in battlegrounds", OnOff(db.battlegrounds))
+        else
+            print(TITLE, "use /pb bg on or /pb bg off")
         end
     elseif command == "maxdist" then
         local limit = tonumber(argument)
